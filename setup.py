@@ -4,8 +4,8 @@ import pkg_resources
 from setuptools import setup, find_packages
 
 setup(
-    name="clip",
-    py_modules=["clip"],
+    name="clip_vlp",
+    py_modules=["clip_vlp"],
     version="1.0",
     description="",
     author="OpenAI",
