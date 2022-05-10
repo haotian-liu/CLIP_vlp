@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 setup(
     name="clip_vlp",
     py_modules=["clip_vlp"],
-    version="1.0",
+    version="1.0.0.1",
     description="",
     author="OpenAI",
     packages=find_packages(exclude=["tests*"]),
