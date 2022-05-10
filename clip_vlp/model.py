@@ -161,7 +161,41 @@ class LayerNorm(nn.LayerNorm):
 
 class QuickGELU(nn.Module):
     def forward(self, x: torch.Tensor):
+        # return x * torch.sigmoid(1.702 * x)
+        return QuickGELUAutoFn.apply(x)
+
+
+@torch.jit.script
+def quick_gelu_jit_fwd(x):
+    return x.mul(torch.sigmoid(1.702 * x))
+
+
+@torch.jit.script
+def quick_gelu_jit_bwd(x, grad_output):
+    alpha_x = 1.702 * x
+    sigmoid_alpha_x = torch.sigmoid(alpha_x)
+    return grad_output * (sigmoid_alpha_x * (1 + alpha_x * (1 - sigmoid_alpha_x)))
+
+
+class QuickGELUAutoFn(torch.autograd.Function):
+    @staticmethod
+    def symbolic(g, x):
+        return g.op("Mul", x, g.op("Sigmoid", g.op("Mul", 1.702, x)))
+
+    @staticmethod
+    def forward(ctx, x):
+        ctx.save_for_backward(x)
         return x * torch.sigmoid(1.702 * x)
+        # return quick_gelu_jit_fwd(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x = ctx.saved_tensors[0]
+        alpha_x = 1.702 * x
+        sigmoid_alpha_x = torch.sigmoid(alpha_x)
+        # return quick_gelu_jit_bwd(x, grad_output)
+        # return grad_output * (sigmoid_alpha_x * (1 + alpha_x * (1 - sigmoid_alpha_x)))
+        return grad_output * (sigmoid_alpha_x + alpha_x * sigmoid_alpha_x * (1 - sigmoid_alpha_x))
 
 
 class ResidualAttentionBlock(nn.Module):
